@@ -1,0 +1,12 @@
+Description: Cadastral Lines, Cadastral Control Lines, Easement Lines, Ref Field Name -, Shape File, Field Name, (unabbreviated) Field Type Field, Width Description, Associated, Attribute, Values Y/N
+1, fid, FID, Object ID, , Feature identifier number, N
+2, shape, SHAPE, Geometry, , Shape Number, N
+3, usage_code, USAGE CODE, Short Integer, , Is a code describing the purpose of the line., Y
+4, render_nor, RENDER NORMAL, Text, 5, Is a concatenated character string which contains components, such as the usage code and a surveyed/unsurveyed identifier, as required for drawing the line's colour and symbol type in a normal view. (same as usage code), N
+5, line_no, LINE NO, Long Integer, , Is a system generated consecutive number that uniquely identifies a line., N
+6, startpnt, START POINT NUMBER, Long Integer, , The point number from which a line starts., N
+7, endpnt, END POINT NUMBER, Long Integer, , The point number at which a line ends., N
+8, consttype, CONSTRUCT TYPE, Text, 1, Is a code that determines the physical construction characteristics of a line. It determines whether additional definition information (other than the end points) is required., Y
+9, surveyed_i, SURVEYED INDICATOR, Text, 1 , Is a single Y/N character indicating whether or not the line is surveyed., N
+10, distvalue, DISTANCE VALUE, Double, 11, Is the distance in metres. For arcs it is the arc distance, for topographic strings it is the sum of the distances between consecutive string points., N
+11, distdatum, DISTANCE DATUM, Text, 1, Is a character code describing the datum for the distance G = Ground Level S = Spheroid, N

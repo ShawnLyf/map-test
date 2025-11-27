@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastral Property Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    .container {
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 0 15px;
+    }
+
+    /* Reduce padding on ArcGIS layer list items */
+    .esri-layer-list__item-container {
+      padding: 4px 8px !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div style='display: flex; flex-wrap: wrap; min-height: auto; padding: 20px 0;' class="row sectionBlockLayout">
+    <div class="container">
+        <h1>Cadastral Property Viewer</h1>
+    </div>
+  </div>
+
+  <!-- Map Container Section -->
+  <div style="min-height: auto; padding: 20px;" class="row sectionBlockLayout">
+    <h2 style="margin-bottom: 20px;">Property Search</h2>
+
+    <!-- Map Search Bar -->
+    <div class="map-container">
+        <div class="map-search" style="display: flex; margin-bottom: 20px;">
+          <input type="text" id="addressSearchInput" placeholder="Search by property address" class="search-input"
+            style="flex: 1; padding: 12px 15px; border: 2px solid #F26D21; border-radius: 6px 0 0 6px; font-size: 14px;" />
+          <button id="searchAddressBtn" class="search-btn"
+            style="padding: 12px 20px; background-color: #F26D21; color: white; border: none; border-radius: 0 6px 6px 0; cursor: pointer; font-size: 18px;">🔍</button>
+        </div>
+
+        <!-- Property Selection Panel (Below Search Bar) -->
+        <div id="mapAlert" class="map-alert"
+          style="background-color: #FFF5F0; border: 2px solid #F26D21; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+
+          <!-- Property Selection Section (Top) -->
+          <h4 style="margin: 0 0 10px 0; color: #F26D21;">Property Selection</h4>
+          <p id="addressStatus" style="margin: 5px 0; color: #666; font-size: 12px;">Address: Please search for an address or click on
+            the map.</p>
+          <p id="coordinatesStatus" style="margin: 5px 0; color: #666; font-size: 12px;">Coordinates: Not selected</p>
+          <div id="polygonMetadata"
+            style="margin: 10px 0; padding: 10px; background-color: #FFF; border: 1px solid #E0E0E0; border-radius: 4px; display: none;">
+            <h5 style="margin: 0 0 5px 0; color: #F26D21; font-size: 13px;">Property Boundary Details</h5>
+            <div id="polygonDetails" style="font-size: 12px; color: #666;"></div>
+          </div>
+          <p style="margin: 5px 0 0 0; font-size: 11px;"><strong>Tip:</strong> Click on a property to view cadastral
+            boundary information from Landgate.</p>
+        </div>
+
+        <!-- ArcGIS Map Container (Full Width) -->
+        <div id="arcgisMapContainer"
+          style="height: 750px; border: 2px solid #E0E0E0; border-radius: 8px; position: relative; overflow: hidden;">
+          <div id="mapLoading" class="map-loading"
+            style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+            <p>Loading map...</p>
+          </div>
+          <div id="arcgisMap" style="width: 100%; height: 100%;"></div>
+
+          <!-- Map Controls Sidebar -->
+          <div id="mapControlsSidebar" style="position: absolute; top: 10px; left: 10px; background-color: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 50; min-width: 220px;">
+            <div style="font-weight: bold; margin-bottom: 10px; color: #333; font-size: 14px; border-bottom: 2px solid #F26D21; padding-bottom: 5px; display: flex; align-items: center; justify-content: space-between;">
+              <span>Map Controls</span>
+              <div style="display: flex; gap: 8px;">
+                <button id="filterActiveLayersBtn" type="button" title="Show only active layers" style="background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; color: #666;">👁️</button>
+                <button id="superMinimizeBtn" type="button" title="Collapse all sections" style="background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; color: #666;">⊟</button>
+                <button id="mapControlsMinimizeBtn" type="button" title="Hide sidebar" style="background: none; border: none; cursor: pointer; font-size: 16px; padding: 0; color: #666;">−</button>
+              </div>
+            </div>
+
+            <div id="mapControlsContent">
+              <!-- Generated Components Section -->
+              <div style="margin-bottom: 12px;">
+                <div style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                  <span>GENERATED COMPONENTS</span>
+                  <button id="generatedMinimizeBtn" type="button" style="background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; color: #666;">▶</button>
+                </div>
+                <div id="generatedContent" style="display: none;">
+                  <!-- User Markers -->
+                  <button id="userMarkersToggleBtn" type="button"
+                    style="width: 100%; margin-bottom: 4px; padding: 6px 10px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>User Markers</span>
+                    <span id="userMarkersIcon" style="font-size: 14px;">👁️</span>
+                  </button>
+
+                  <!-- Frontal Zone -->
+                  <button id="setbackToggleBtn" type="button"
+                    style="width: 100%; margin-bottom: 4px; padding: 6px 10px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>Frontal Zone</span>
+                    <span id="setbackIcon" style="font-size: 14px;">👁️</span>
+                  </button>
+
+                  <!-- Property Subdivisions -->
+                  <button id="subdivisionsToggleBtn" type="button"
+                    style="width: 100%; margin-bottom: 4px; padding: 6px 10px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <span>Property Subdivisions</span>
+                    <span id="subdivisionsIcon" style="font-size: 14px;">👁️</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Landgate Layers Section -->
+              <div style="margin-bottom: 12px;">
+                <div style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                  <span>LANDGATE LAYERS</span>
+                  <button id="viewLayersMinimizeBtn" type="button" style="background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; color: #666;">▼</button>
+                </div>
+                <div id="viewLayersContent">
+
+              <!-- Cadastral Boundaries -->
+              <button id="cadastreToggleBtn" type="button"
+                style="width: 100%; margin-bottom: 4px; padding: 6px 10px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>Cadastral Boundaries</span>
+                <span id="cadastreIcon" style="font-size: 14px;">👁️</span>
+              </button>
+
+              <!-- Road / Boundary Lines -->
+              <button id="cadastreLinesToggleBtn" type="button"
+                style="width: 100%; margin-bottom: 4px; padding: 6px 10px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>Road / Boundary Lines</span>
+                <span id="cadastreLinesIcon" style="font-size: 14px;">🚫</span>
+              </button>
+
+              <!-- Property Addresses -->
+              <button id="propertyAddressesToggleBtn" type="button"
+                style="width: 100%; margin-bottom: 4px; padding: 6px 10px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>Property Addresses</span>
+                <span id="propertyAddressesIcon" style="font-size: 14px;">🚫</span>
+              </button>
+
+              <!-- Lodged Cadastral Boundaries (Proposed) -->
+              <button id="lodgedCadastralToggleBtn" type="button"
+                style="width: 100%; margin-bottom: 4px; padding: 6px 10px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>Lodged Boundaries (Proposed)</span>
+                <span id="lodgedCadastralIcon" style="font-size: 14px;">🚫</span>
+              </button>
+
+              <!-- Lodged Cadastral Lines (Proposed) -->
+              <button id="lodgedLinesToggleBtn" type="button"
+                style="width: 100%; margin-bottom: 4px; padding: 6px 10px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 4px; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: space-between;">
+                <span>Lodged Lines (Proposed)</span>
+                <span id="lodgedLinesIcon" style="font-size: 14px;">🚫</span>
+              </button>
+                </div>
+              </div>
+
+              <!-- Western Power Utilities Section -->
+              <div style="margin-bottom: 12px;">
+                <div style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                  <span>WESTERN POWER UTILITIES</span>
+                  <button id="utilitySectionToggleBtn" type="button" style="background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; color: #666;">▼</button>
+                </div>
+                <div id="utilitySectionContent">
+
+              <button id="streetlightsToggleBtn" type="button" data-layer="streetlights"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>💡 Streetlights</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="transmissionPolesToggleBtn" type="button" data-layer="transmissionPoles"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>🗼 Transmission Poles</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="utilityPolesToggleBtn" type="button" data-layer="utilityPoles"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>📍 Distribution Poles</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="servicePitsToggleBtn" type="button" data-layer="servicePits"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>⬛ Electrical Service Pits</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="pillarsToggleBtn" type="button" data-layer="pillars"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>💎 Electrical Pillars</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="utilityTransformersToggleBtn" type="button" data-layer="utilityTransformers"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>⚡ Electrical Transformers</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="enclosuresToggleBtn" type="button" data-layer="enclosures"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>📦 Electrical Enclosures</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="otherOverheadToggleBtn" type="button" data-layer="otherOverhead"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>〰️ Other Overhead Lines</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="otherUndergroundToggleBtn" type="button" data-layer="otherUnderground"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>⏸️ Other Underground Cables</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="utilityUndergroundCablesToggleBtn" type="button" data-layer="utilityUndergroundCables"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>⏸️ Distribution Underground</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="transmissionUndergroundToggleBtn" type="button" data-layer="transmissionUnderground"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>⏸️ Transmission Underground</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="utilityOverheadPowerlinesToggleBtn" type="button" data-layer="utilityOverheadPowerlines"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>〰️ Distribution Overhead</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="transmissionOverheadToggleBtn" type="button" data-layer="transmissionOverhead"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>〰️ Transmission Overhead</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="undergroundStructuresToggleBtn" type="button" data-layer="undergroundStructures"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>🔲 Underground Structures</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="restrictionZonesToggleBtn" type="button" data-layer="restrictionZones"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>🚫 Restriction Zones</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="substationsToggleBtn" type="button" data-layer="substations"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>🏭 Substations/Terminals</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="ugProjectAreasToggleBtn" type="button" data-layer="ugProjectAreas"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>🔶 UG Project Areas</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+
+              <button id="ugProjectZonesToggleBtn" type="button" data-layer="ugProjectZones"
+                style="width: 100%; margin-bottom: 3px; padding: 5px 8px; background-color: transparent; color: #333; border: 1px solid #E0E0E0; border-radius: 3px; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: space-between;">
+                <span>🔷 UG Project Zones</span>
+                <span class="utility-icon" style="font-size: 12px;">🚫</span>
+              </button>
+                </div>
+              </div>
+
+              <!-- Tools Section -->
+              <div style="margin-bottom: 12px;">
+                <div style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                  <span>TOOLS</span>
+                  <button id="toolsMinimizeBtn" type="button" style="background: none; border: none; cursor: pointer; font-size: 14px; padding: 0; color: #666;">▼</button>
+                </div>
+                <div id="toolsContent">
+
+                  <!-- Subdivision Mode (Disabled by default) -->
+                  <button id="subdivisionModeBtn" type="button" disabled
+                    style="width: 100%; margin-bottom: 8px; padding: 8px 12px; background-color: #BDBDBD; color: #757575; border: none; border-radius: 4px; cursor: not-allowed; font-size: 12px;">
+                    <span id="subdivisionBtnText">Subdivision Mode</span>
+                  </button>
+
+                  <!-- Clear Selection -->
+                  <button id="clearSelectionBtn" type="button"
+                    style="width: 100%; padding: 8px 12px; background-color: #F26D21; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                    Clear Selection
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search Tools Section (Below Map) -->
+        <div style="margin-top: 20px; padding-top: 15px; border-top: 2px solid #F26D21;">
+          <!-- PIN Search -->
+          <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-size: 11px; font-weight: bold; color: #666;">Search by Property PIN:</label>
+            <div style="display: flex; gap: 5px;">
+              <input type="number" id="pinSearchInput" placeholder="e.g., 539985"
+                style="flex: 1; padding: 6px 8px; border: 1px solid #F26D21; border-radius: 4px; font-size: 12px;" />
+              <button id="searchPinBtn"
+                style="padding: 6px 12px; background-color: #F26D21; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                Find PIN
+              </button>
+            </div>
+            <p id="pinSearchStatus" style="margin: 5px 0 0 0; font-size: 10px; color: #999; display: none;"></p>
+          </div>
+
+          <!-- Pillar Search -->
+          <div>
+            <label style="display: block; margin-bottom: 5px; font-size: 11px; font-weight: bold; color: #666;">Search by Electrical Pillar ID:</label>
+            <div style="display: flex; gap: 5px;">
+              <input type="text" id="pillarSearchInput" placeholder="e.g., S2099678"
+                style="flex: 1; padding: 6px 8px; border: 1px solid #F26D21; border-radius: 4px; font-size: 12px;" />
+              <button id="searchPillarBtn"
+                style="padding: 6px 12px; background-color: #00C800; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                Find Pillar
+              </button>
+            </div>
+            <p id="pillarSearchStatus" style="margin: 5px 0 0 0; font-size: 10px; color: #999; display: none;"></p>
+          </div>
+        </div>
+      </div>
+  </div>
+
+  <!-- SLIP Credentials Modal -->
+  <div id="slipCredentialsModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background-color: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-width: 400px; width: 90%;">
+      <h3 style="margin: 0 0 15px 0; color: #F26D21; font-size: 18px;">SLIP Authentication Required</h3>
+      <p style="margin: 0 0 20px 0; color: #666; font-size: 14px;">The server is not configured with SLIP credentials. Please enter your credentials to access cadastral data.</p>
+
+      <div style="margin-bottom: 15px;">
+        <label for="slipUsername" style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: #333;">Username (Email):</label>
+        <input type="email" id="slipUsername" placeholder="your.email@example.com" style="width: 100%; padding: 10px; border: 2px solid #E0E0E0; border-radius: 6px; font-size: 14px; box-sizing: border-box;" />
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <label for="slipPassword" style="display: block; margin-bottom: 5px; font-size: 13px; font-weight: bold; color: #333;">Password:</label>
+        <input type="password" id="slipPassword" placeholder="••••••••" style="width: 100%; padding: 10px; border: 2px solid #E0E0E0; border-radius: 6px; font-size: 14px; box-sizing: border-box;" />
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button id="slipCredentialsCancel" style="padding: 10px 20px; background-color: #E0E0E0; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Cancel</button>
+        <button id="slipCredentialsSubmit" style="padding: 10px 20px; background-color: #F26D21; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">Authenticate</button>
+      </div>
+
+      <p style="margin: 15px 0 0 0; font-size: 11px; color: #999;">Your credentials are sent directly to the SLIP service and are not stored.</p>
+    </div>
+  </div>
+
+  <!-- Include modular JavaScript -->
+  <script type="module" src="js/main.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,14 @@
+{
+  "name": "dq-experiment-api",
+  "version": "1.0.0",
+  "description": "Azure Functions API for DQ Experiment",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests specified\""
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {}
+}

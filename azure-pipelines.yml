@@ -1,0 +1,61 @@
+# Azure Pipelines configuration for Azure Static Web Apps
+# This pipeline deploys the DQ Experiment application to Azure
+
+trigger:
+  branches:
+    include:
+      - main
+      - feat/*
+      - Power-Pages-Modifications
+
+pr:
+  branches:
+    include:
+      - main
+      - Power-Pages-Modifications
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  # Azure Static Web Apps deployment token (configured in pipeline variables)
+  # AZURE_STATIC_WEB_APPS_API_TOKEN - set this as a secret variable in Azure DevOps
+
+stages:
+  - stage: Build_and_Deploy
+    displayName: 'Build and Deploy to Azure Static Web Apps'
+    jobs:
+      - job: Deploy
+        displayName: 'Deploy Static Web App'
+        steps:
+          # Checkout code
+          - checkout: self
+            submodules: true
+            displayName: 'Checkout repository'
+
+          # Install Node.js for Azure Functions
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '18.x'
+            displayName: 'Install Node.js 18.x'
+
+          # Install API dependencies
+          - script: |
+              cd api
+              npm install
+            displayName: 'Install API dependencies'
+
+          # Deploy to Azure Static Web Apps
+          - task: AzureStaticWebApp@0
+            inputs:
+              app_location: '/'
+              api_location: 'api'
+              output_location: ''
+              azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_API_TOKEN)
+              skip_app_build: true
+            displayName: 'Deploy to Azure Static Web Apps'
+            env:
+              # Pass environment variables for Azure Functions
+              SLIP_USERNAME: $(SLIP_USERNAME)
+              SLIP_PASSWORD: $(SLIP_PASSWORD)
+              SLIP_STATIC_TOKEN: $(SLIP_STATIC_TOKEN)

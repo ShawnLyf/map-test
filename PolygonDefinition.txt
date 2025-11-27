@@ -1,0 +1,22 @@
+Description: Cadastral Polygons, Easement Polygons
+Ref Field Name -, Shape File, Field Name, (unabbreviated) Field Type Field, Width Description, Associated, Attribute, Values Y/N
+1, fid, FID, Object ID, , Feature identifier number, N
+2, shape, SHAPE, Geometry, , An area defined by one or more polygons or a sequence of connected points and lines. Individual polygon areas comprising the shape are not necessarily adjacent. The shape may change over time, with portions added or removed from the total shape, or amendments to polygons that make up the shape., N
+3, usage_code, USAGE CODE, Short Integer, , Is a code describing the purpose of the area shape e.g. signifying a Cadastral Lot., Y
+4, render_nor, RENDER NORMAL, Text, 5, Is a character string that contains components, such as the usage code, as required for drawing the polygon/area shape’s colour and symbol type in a normal view., N
+5, pin, POLYGON NUMBER, Long Integer, , Is the unique polygon identifier assigned at capture that provides a link between the spatial & tenure data., N
+6, centlat, LAND CENTROID LATITUDE, Double, , Is the latitude coordinate for the centroid of the area shape / polygon, in decimal degrees., N
+7, centlong, LAND CENTROID LONGITUDE, Double, , Is the longitude coordinate for the centroid of the area shape / polygon, in decimal degrees., N
+8, calc_area, CALCULATED AREA, Double, 16, Is the area in square metres of the area shape as calculated by the system., N
+9, date_creat, DATE CREATED, date, , Date the polygon was added to the system database., N
+10, date_modif, DATE MODIFIED, date, , Is the date that the polygon was last modified. For a new polygon this will be the same as the date created., N
+11, legal_area, SURVEYED AREA, Double, , Is the legal, keyed in or other derived area in square metres – not necessarily the same as the CALCULATED AREA. The method of derivation of area is given in AREA DERIVATION METHOD., N
+12, legal_deriv, AREA DERIVATION METHOD, text, 2, Is the method of determining the AREA (not CALCULATED AREA) of the polygon or area shape., Y
+13, area_indic, AREA DERIVATION INDICATOR, text, 1, Is a yes/no flag indicating whether or not the legal AREA (not CALCULATED AREA) uses derived, described or approximate data., N
+14, centroid_c, COORDINATE METHOD, Text, 1, Is the method by which the centroid of the polygon is derived, N
+15, date_retir, DATE RETIRED, Date, , The date that the feature was retired and no longer exists in the current cadastre. Not populated, N
+16, date_bound, DATE BOUNDARY MODIFIED, Date, , The date that the feature was last modified. For a new polygon this will be the same as the date created, N
+17, pityp, PITYPE, Text, 1, A number describing the type of PI, Y
+18, piparcel, PIPARCEL, Text, 17, 17 Char parcel identifier. The major part of the PI. There are 3 different PI formats identified by the PITYP field. These 3 different types of PI are referred to as i) survey lot, crown allotment, and miscellaneous, Y
+19, land_type, LAND TYPE, Text, 5, LAND refers to an area of land that Landgate has an interest in administering. As well as freehold and crown lots, it also covers other land of interest such as reserves, leases, road polygons, unallocated crown land and stock routes. Not all LAND records have a corresponding lot record. Land areas may consist of one or more polygons. Land areas may be overlapping. That is, a particular piece of land may be a crown lot as well as a timber reserve as well as a state forest area, Y
+20, lot_number, LOT NUMBER, Long Integer, 6, Lot number from the PIPARCEL., N
